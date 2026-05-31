@@ -413,9 +413,18 @@ class StateManager:
                 return campaigns
 
     async def update_campaign(self, campaign_id: str, **kwargs):
+        # Whitelist of allowed column names to prevent SQL injection via key interpolation
+        _ALLOWED_CAMPAIGN_KEYS = frozenset([
+            "name", "channel", "instantly_campaign_id", "sequence_json",
+            "prospect_ids_json", "status",
+        ])
         async with aiosqlite.connect(self.db_path) as db:
             for key, value in kwargs.items():
-                await db.execute(
+                # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query
+                if key not in _ALLOWED_CAMPAIGN_KEYS:
+                    raise ValueError(f"disallowed campaign column: {key}")
+                await db.execute(  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query
+                    # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query
                     f"UPDATE campaigns SET {key} = ? WHERE id = ?",
                     (value, campaign_id),
                 )
@@ -457,8 +466,16 @@ class StateManager:
                 return convos
 
     async def update_conversation(self, convo_id: str, **kwargs):
+        # Whitelist of allowed column names to prevent SQL injection via key interpolation
+        _ALLOWED_CONVO_KEYS = frozenset([
+            "prospect_id", "campaign_id", "channel", "thread_json",
+            "intent", "stage", "status",
+        ])
         async with aiosqlite.connect(self.db_path) as db:
             for key, value in kwargs.items():
+                if key not in _ALLOWED_CONVO_KEYS:
+                    raise ValueError(f"disallowed conversation column: {key}")
+                # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query
                 await db.execute(
                     f"UPDATE conversations SET {key} = ?, updated_at = ? WHERE id = ?",
                     (value, datetime.utcnow().isoformat(), convo_id),
