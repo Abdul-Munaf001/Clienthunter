@@ -345,14 +345,14 @@ async def start_harvey():
     # Ensure data dir exists
     (PROJECT_ROOT / "data").mkdir(parents=True, exist_ok=True)
 
-    log_handle = open(LOG_FILE, "a")
-    _harvey_process = subprocess.Popen(
-        [sys.executable, "-m", "harvey"],
-        cwd=str(PROJECT_ROOT),
-        stdout=log_handle,
-        stderr=log_handle,
-        start_new_session=True,
-    )
+    with open(LOG_FILE, "a") as log_handle:
+        _harvey_process = subprocess.Popen(
+            [sys.executable, "-m", "harvey"],
+            cwd=str(PROJECT_ROOT),
+            stdout=log_handle,
+            stderr=log_handle,
+            start_new_session=True,
+        )
     _harvey_started_at = datetime.now()
 
     # Write PID file
